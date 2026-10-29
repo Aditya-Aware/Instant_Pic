@@ -1,0 +1,50 @@
+package com.sharedmemory.rules.internal.drl;
+
+import com.sharedmemory.rules.internal.facts.PhotoContext;
+import com.sharedmemory.rules.internal.facts.MatchedMember;
+import com.sharedmemory.rules.internal.facts.SharingRuleConfig;
+import com.sharedmemory.rules.api.SharingDecision;
+import com.sharedmemory.rules.api.VisibilityDecision;
+
+global java.util.List decisions;
+global java.util.List visibilityDecisions;
+
+// ---------- Recipient rule: always fires per confirmed, non-opted-out match ----------
+rule "Default self delivery"
+    salience 10
+    when
+        $photo : PhotoContext( $pid : photoId, $eid : eventId )
+        $m : MatchedMember( optedOut == false ) from $photo.matchedMembers
+    then
+        decisions.add(new SharingDecision($pid, $eid, $m.getMemberId(), "DEFAULT_SELF", "default-self-rule", false));
+end
+
+// ---------- Visibility rules: mutually exclusive, most-specific wins ----------
+rule "Private photo hides from gallery"
+    activation-group "gallery-visibility"
+    salience 30
+    when
+        $photo : PhotoContext( matchedMemberCount == 1, $pid : photoId, $eid : eventId )
+        SharingRuleConfig( eventId == $eid, ruleType == "PRIVATE_PHOTO", enabled == true )
+    then
+        visibilityDecisions.add(new VisibilityDecision($pid, false, "private-photo-rule"));
+end
+
+rule "Group photo visible in gallery"
+    activation-group "gallery-visibility"
+    salience 20
+    when
+        $photo : PhotoContext( matchedMemberCount >= 3, $pid : photoId, $eid : eventId )
+        SharingRuleConfig( eventId == $eid, ruleType == "GROUP_PHOTO", enabled == true )
+    then
+        visibilityDecisions.add(new VisibilityDecision($pid, true, "group-photo-rule"));
+end
+
+rule "Default visibility - personal only"
+    activation-group "gallery-visibility"
+    salience 0
+    when
+        $photo : PhotoContext( $pid : photoId )
+    then
+        visibilityDecisions.add(new VisibilityDecision($pid, false, "default-visibility"));
+end

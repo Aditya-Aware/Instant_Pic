@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: shared-memory-photo-network
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:smpn}
+    username: ${DB_USER:smpn}
+    password: ${DB_PASSWORD:smpn_dev_password}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+  face:
+    detector-model-path: ${FACE_DETECTOR_MODEL_PATH:models/version-RFB-320.onnx}
+    embedding-model-path: ${FACE_EMBEDDING_MODEL_PATH:models/arcfaceresnet100-8.onnx}
+    # Empirically tuned against real photos (see FaceRecognitionPipelineTest), not a guess: on
+    # raw-pixel ArcFace embeddings, distinct-photo same-identity pairs scored >=0.226 and
+    # different-identity pairs scored <=0.099 in testing. 0.18 sits with margin on both sides.
+    match-confidence-threshold: ${FACE_MATCH_THRESHOLD:0.18}
+  media:
+    storage-root: ${MEDIA_STORAGE_ROOT:./data/media}
+    # Dev-only AES-256 key (base64), same pattern as app.jwt.secret above — override via
+    # MEDIA_MASTER_KEY_BASE64 in any real deployment.
+    master-key-base64: ${MEDIA_MASTER_KEY_BASE64:qqQurC9IoatWttumy+18vI2C8GTxIKJnFQN5wVy4Orc=}
+  invitation:
+    default-ttl-days: 30

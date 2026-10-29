@@ -1,0 +1,24 @@
+# Backend
+backend/target/
+backend/models/*
+!backend/models/.gitkeep
+
+# Mobile (Expo)
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/ios/
+mobile/android/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Env
+.env
+*.env.local
+backend/data/
